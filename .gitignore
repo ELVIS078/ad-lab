@@ -16,3 +16,7 @@ vault_pass.txt
 # Ansible
 *.retry
 config/
+.env
+*.pem
+*.key
+certs/
