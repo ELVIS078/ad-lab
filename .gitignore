@@ -1,0 +1,18 @@
+# Raw lab telemetry can contain hostnames/usernames/internal IPs — keep
+# redacted screenshots only, not raw log dumps, unless sanitized.
+screenshots/*.log
+screenshots/*.json
+screenshots/*.evtx
+
+# Vagrant / Packer
+.vagrant/
+*.box
+
+# Secrets
+*.vault
+vault_pass.txt
+.env
+
+# Ansible
+*.retry
+config/

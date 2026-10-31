@@ -1,0 +1,25 @@
+# Docker Compose override to fit the official Wazuh single-node stack
+# into an 8GB host already running 1-2 Windows VMs.
+#
+# Usage: copy this file next to the official wazuh-docker/single-node/
+# docker-compose.yml, then:
+#   docker compose -f docker-compose.yml -f low-mem.override.yml up -d
+#
+# Lowers the OpenSearch (indexer) JVM heap, which is the single biggest
+# memory consumer in the stack, and sets hard mem_limits so a runaway
+# container can't starve your Windows VMs out of RAM.
+
+services:
+  wazuh.indexer:
+    environment:
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    mem_limit: 900m
+
+  wazuh.manager:
+    mem_limit: 1200m
+
+  wazuh.dashboard:
+    mem_limit: 700m
+    # Comment out this whole service block (and its `depends_on` entry
+    # in docker-compose.yml, if version-specific) if you need the extra
+    # ~700MB — query alerts via the API instead (see README.md).

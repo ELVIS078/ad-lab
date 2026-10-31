@@ -1,0 +1,35 @@
+title: Potential Kerberoasting via RC4 TGS Request for SPN Account
+id: 3e5d8a2c-9f1b-4c7a-8e6d-2b4f9a1c7d03
+status: experimental
+description: |
+    Detects a Kerberos TGS request (Event ID 4769) using RC4 encryption
+    (etype 0x17) for a service account — the signature of Kerberoasting,
+    since modern domain-joined workstations default to AES and most
+    legitimate service tickets use it; an RC4 downgrade for a specific
+    SPN account is the classic indicator tools like Rubeus/Impacket's
+    GetUserSPNs force by default.
+references:
+    - https://attack.mitre.org/techniques/T1558/003/
+    - https://adsecurity.org/?p=3458
+author: APT-Simulation-Lab
+date: 2026-10-25
+tags:
+    - attack.credential-access
+    - attack.t1558.003
+logsource:
+    product: windows
+    service: security
+    definition: 'Requires "Audit Kerberos Service Ticket Operations" success auditing enabled'
+detection:
+    selection:
+        EventID: 4769
+        TicketEncryptionType: '0x17'      # RC4-HMAC
+    filter_machine_accounts:
+        ServiceName|endswith: '$'         # machine accounts are noisy, not the service accts we care about
+    condition: selection and not filter_machine_accounts
+falsepositives:
+    - Legacy applications still forcing RC4 for compatibility — baseline
+      your environment's normal etype distribution before enabling at
+      a high severity in production; less of a concern in a lab with
+      a known-small set of service accounts.
+level: high

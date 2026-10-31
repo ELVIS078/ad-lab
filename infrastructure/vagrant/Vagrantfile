@@ -1,0 +1,62 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+# Reduced-footprint lab: 1 DC + 1 client, sized for an ~8GB RAM host.
+# Run them one at a time if your host is tight on memory:
+#   vagrant up dc01
+#   ... provision AD, then ...
+#   vagrant up client01
+#
+# Provider: libvirt (lighter than VirtualBox). Install with:
+#   sudo apt install vagrant libvirt-daemon-system qemu-kvm
+#   vagrant plugin install vagrant-libvirt
+#
+# Windows boxes: this Vagrantfile expects boxes built locally with Packer
+# from Microsoft evaluation ISOs (Windows Server 2022 Eval / Windows 10/11
+# Eval), since no redistributable Windows box can be pulled from a public
+# registry. See ../docs/architecture.md for sourcing the ISOs legally
+# (Microsoft evaluation center, 180-day eval license).
+
+Vagrant.configure("2") do |config|
+
+  config.vm.define "dc01" do |dc|
+    dc.vm.box = "windows-server-2022-eval" # build locally via Packer first
+    dc.vm.hostname = "dc01"
+
+    dc.vm.provider :libvirt do |lv|
+      lv.memory = 2048
+      lv.cpus = 1
+      lv.graphics_type = "none" # headless, saves resources
+    end
+
+    dc.vm.network "private_network",
+      ip: "192.168.50.10",
+      libvirt__network_name: "lab-internal"
+
+    dc.vm.provision "shell", inline: "winrm quickconfig -q"
+  end
+
+  config.vm.define "client01" do |client|
+    client.vm.box = "windows-10-eval" # build locally via Packer first
+    client.vm.hostname = "client01"
+
+    client.vm.provider :libvirt do |lv|
+      lv.memory = 2048
+      lv.cpus = 1
+      lv.graphics_type = "none"
+    end
+
+    client.vm.network "private_network",
+      ip: "192.168.50.20",
+      libvirt__network_name: "lab-internal"
+
+    # Second NIC bridged toward the host, so attacker tooling run
+    # natively on the host (no dedicated C2 VM) can reach this box.
+    client.vm.network "private_network",
+      ip: "192.168.57.20",
+      libvirt__network_name: "lab-attacker"
+
+    client.vm.provision "shell", inline: "winrm quickconfig -q"
+  end
+
+end

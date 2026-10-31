@@ -1,0 +1,25 @@
+---
+# Installs the Wazuh agent (MSI) and points it at the manager running on
+# the host (via docker-compose in detection-stack/wazuh-single-node).
+# Pin WAZUH_VERSION to whatever the docker-compose manager image uses —
+# agent/manager major.minor versions must match.
+
+- name: Download Wazuh agent MSI
+  ansible.windows.win_get_url:
+    url: "https://packages.wazuh.com/4.x/windows/wazuh-agent-4.9.0-1.msi"
+    dest: C:\Windows\Temp\wazuh-agent.msi
+
+- name: Install Wazuh agent
+  ansible.windows.win_package:
+    path: C:\Windows\Temp\wazuh-agent.msi
+    arguments: >
+      /q
+      WAZUH_MANAGER="{{ wazuh_manager_ip }}"
+      WAZUH_AGENT_GROUP="lab"
+    state: present
+
+- name: Ensure Wazuh agent service is running
+  ansible.windows.win_service:
+    name: WazuhSvc
+    start_mode: auto
+    state: started

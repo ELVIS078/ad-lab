@@ -1,0 +1,58 @@
+---
+# Promotes dc01 to a Domain Controller for a new forest.
+# Domain: lab.local — change to taste.
+- name: Promote dc01 to Active Directory Domain Controller
+  hosts: dc
+  gather_facts: false
+  vars:
+    domain_name: lab.local
+    domain_netbios: LAB
+    # Change this before running. Use ansible-vault for anything beyond a
+    # throwaway lab: ansible-vault encrypt_string 'YourPass123!' --name 'safe_mode_password'
+    safe_mode_password: "ChangeMe_Lab123!"
+
+  tasks:
+    - name: Install AD-Domain-Services feature
+      ansible.windows.win_feature:
+        name: AD-Domain-Services
+        include_management_tools: true
+        include_sub_features: true
+        state: present
+      register: adds_feature
+
+    - name: Install DNS Server feature
+      ansible.windows.win_feature:
+        name: DNS
+        state: present
+
+    - name: Promote server to first DC in new forest
+      microsoft.ad.domain:
+        dns_domain_name: "{{ domain_name }}"
+        domain_netbios_name: "{{ domain_netbios }}"
+        safe_mode_password: "{{ safe_mode_password }}"
+        install_dns: true
+      register: ad_promo
+
+    - name: Reboot after promotion
+      ansible.windows.win_reboot:
+      when: ad_promo.reboot_required
+
+    - name: Create a couple of test OUs
+      microsoft.ad.ou:
+        name: "{{ item }}"
+        path: "DC={{ domain_name.split('.') | join(',DC=') }}"
+        state: present
+      loop:
+        - Workstations
+        - ServiceAccounts
+
+    - name: Create a test service account (SPN target for Kerberoasting TTP)
+      microsoft.ad.user:
+        name: svc-sql
+        password: "SvcAcct_Weak123"   # intentionally weak — this IS the lab scenario
+        password_never_expires: true
+        state: present
+        path: "OU=ServiceAccounts,DC={{ domain_name.split('.') | join(',DC=') }}"
+        attributes:
+          servicePrincipalNames:
+            - "MSSQLSvc/dc01.{{ domain_name }}:1433"

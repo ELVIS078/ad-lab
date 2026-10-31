@@ -1,0 +1,43 @@
+title: Potential DCSync — Directory Replication Request from Non-DC
+id: 8c4f2e9a-1d7b-4e3c-af6d-5c9e2b8a4f06
+status: experimental
+description: |
+    Detects a directory-replication request (Event ID 4662 with the
+    well-known DS-Replication-Get-Changes / -All GUIDs in the
+    Properties/AccessMask) issued by a principal that is not one of the
+    domain's actual domain controllers — the signature of a DCSync
+    attack (Mimikatz `lsadump::dcsync`, Impacket `secretsdump.py
+    -just-dc`).
+references:
+    - https://attack.mitre.org/techniques/T1003/006/
+    - https://adsecurity.org/?p=1729
+author: APT-Simulation-Lab
+date: 2026-10-25
+tags:
+    - attack.credential-access
+    - attack.t1003.006
+logsource:
+    product: windows
+    service: security
+    definition: 'Requires "Audit Directory Service Access" and "Audit Directory Service Changes" success auditing enabled on the domain controller'
+detection:
+    selection:
+        EventID: 4662
+        Properties|contains:
+            # DS-Replication-Get-Changes
+            - '{1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}'
+            # DS-Replication-Get-Changes-All
+            - '{1131f6ad-9c07-11d1-f79f-00c04fc2dcd2}'
+    filter_known_dcs:
+        # Populate with your actual DC computer accounts — in this lab,
+        # only dc01$ is legitimate. Any OTHER account requesting this
+        # right is the alert.
+        SubjectUserName|endswith: '$'
+        SubjectUserName: 'DC01$'
+    condition: selection and not filter_known_dcs
+falsepositives:
+    - Legitimate domain controllers and Azure AD Connect / Entra Connect
+      sync accounts — both must be explicitly allowlisted in
+      filter_known_dcs for a production deployment; in this lab the
+      only legitimate replicator is dc01$ itself.
+level: critical

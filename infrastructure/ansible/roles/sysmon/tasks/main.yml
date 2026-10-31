@@ -1,0 +1,30 @@
+---
+# Installs Sysmon with the well-known SwiftOnSecurity config, which is
+# the de-facto standard baseline for a detection-engineering lab: it
+# gives broad, well-tuned coverage (process creation, network, registry,
+# image load) that most public Sigma rules are written against.
+
+- name: Download Sysmon
+  ansible.windows.win_get_url:
+    url: https://download.sysinternals.com/files/Sysmon.zip
+    dest: C:\Windows\Temp\Sysmon.zip
+
+- name: Extract Sysmon
+  community.windows.win_unzip:
+    src: C:\Windows\Temp\Sysmon.zip
+    dest: C:\Windows\Temp\Sysmon
+
+- name: Download SwiftOnSecurity Sysmon config
+  ansible.windows.win_get_url:
+    url: "{{ sysmon_config_url }}"
+    dest: C:\Windows\Temp\sysmonconfig.xml
+
+- name: Check if Sysmon service already exists
+  ansible.windows.win_service_info:
+    name: Sysmon64
+  register: sysmon_service
+
+- name: Install Sysmon with config
+  ansible.windows.win_command: >
+    C:\Windows\Temp\Sysmon\Sysmon64.exe -accepteula -i C:\Windows\Temp\sysmonconfig.xml
+  when: sysmon_service.exists == false

@@ -1,0 +1,23 @@
+<!--
+  Custom Wazuh rule derived from ../sigma/T1566.001-office-child-process.yml.
+  Drop into /var/ossec/etc/rules/local_rules.xml on the Wazuh manager
+  container (or mount it in via docker-compose volumes) and restart
+  the manager.
+
+  Assumes Sysmon Event ID 1 (process creation) is being shipped via the
+  Wazuh Windows agent's standard Sysmon decoder, which exposes
+  win.eventdata.parentImage / win.eventdata.image fields.
+-->
+<group name="windows,sysmon,initial_access,attack.t1566.001,">
+
+  <rule id="100100" level="12">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\(WINWORD|EXCEL|POWERPNT|OUTLOOK)\.EXE$</field>
+    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|wscript|cscript)\.exe$</field>
+    <description>T1566.001 — Office application spawned a command shell (possible malicious macro)</description>
+    <mitre>
+      <id>T1566.001</id>
+    </mitre>
+  </rule>
+
+</group>

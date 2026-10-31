@@ -1,0 +1,27 @@
+<!--
+  Custom Wazuh rule derived from ../sigma/T1558.003-kerberoasting.yml.
+  Drop into /var/ossec/etc/rules/local_rules.xml on the manager and
+  restart it (see detection-stack/wazuh-single-node/README.md).
+
+  Notes:
+  - The exact <if_sid> parent rule ID for Windows Security Event 4769
+    depends on your Wazuh ruleset version — check the dashboard's
+    Rules view (filter on "4769") for the exact ID in YOUR deployment
+    and swap it in below. This is deliberately left for you to confirm
+    rather than guessed, per the Jour 6 exercise: finding the right
+    parent rule ID is the skill, not just copying a number.
+  - win.eventdata.ticketEncryptionType '0x17' = RC4-HMAC.
+-->
+<group name="windows,kerberoasting,attack.t1558.003,">
+
+  <rule id="100200" level="10">
+    <if_sid>60106</if_sid> <!-- CONFIRM: parent rule for Windows Security 4769 in your ruleset -->
+    <field name="win.eventdata.ticketEncryptionType">0x17</field>
+    <field name="win.eventdata.serviceName" negate="yes" type="pcre2">\$$</field>
+    <description>T1558.003 — Possible Kerberoasting: RC4 TGS request for a service account ($(win.eventdata.serviceName))</description>
+    <mitre>
+      <id>T1558.003</id>
+    </mitre>
+  </rule>
+
+</group>

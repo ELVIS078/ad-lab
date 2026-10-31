@@ -1,0 +1,22 @@
+<!--
+  Custom Wazuh rule derived from ../sigma/T1003.006-dcsync.yml.
+  Drop into /var/ossec/etc/rules/local_rules.xml on the manager and
+  restart it.
+
+  As with the Kerberoasting rule: confirm the real <if_sid> parent rule
+  for Windows Security Event 4662 in YOUR Wazuh ruleset version before
+  relying on the number below — check the dashboard's Rules view.
+-->
+<group name="windows,dcsync,attack.t1003.006,">
+
+  <rule id="100300" level="14">
+    <if_sid>60138</if_sid> <!-- CONFIRM: parent rule for Windows Security 4662 in your ruleset -->
+    <field name="win.eventdata.properties" type="pcre2">(?i)(1131f6aa-9c07-11d1-f79f-00c04fc2dcd2|1131f6ad-9c07-11d1-f79f-00c04fc2dcd2)</field>
+    <field name="win.eventdata.subjectUserName" negate="yes">DC01$</field>
+    <description>T1003.006 — Possible DCSync: directory replication rights used by non-DC principal ($(win.eventdata.subjectUserName))</description>
+    <mitre>
+      <id>T1003.006</id>
+    </mitre>
+  </rule>
+
+</group>

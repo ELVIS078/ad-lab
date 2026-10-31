@@ -1,0 +1,14 @@
+---
+# Installs the telemetry pipeline (Sysmon + Wazuh agent) on every host.
+# Run after promote-dc.yml / join-domain.yml, and before starting the
+# detection stack (detection-stack/wazuh-single-node).
+- name: Install Sysmon and Wazuh agent on all lab hosts
+  hosts: windows
+  gather_facts: false
+  vars:
+    wazuh_manager_ip: 192.168.50.1 # host machine, where docker-compose runs
+    sysmon_config_url: https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml
+
+  roles:
+    - sysmon
+    - wazuh-agent

@@ -1,0 +1,27 @@
+---
+- name: Join client01 to the lab domain
+  hosts: clients
+  gather_facts: false
+  vars:
+    domain_name: lab.local
+    domain_admin_user: "LAB\\Administrator"
+    domain_admin_password: "ChangeMe_Lab123!"
+
+  tasks:
+    - name: Set DNS to point at the DC (for domain resolution)
+      ansible.windows.win_dns_client:
+        adapter_names: "*"
+        dns_servers:
+          - 192.168.50.10
+
+    - name: Join domain
+      microsoft.ad.membership:
+        dns_domain_name: "{{ domain_name }}"
+        domain_admin_user: "{{ domain_admin_user }}"
+        domain_admin_password: "{{ domain_admin_password }}"
+        state: domain
+      register: join_result
+
+    - name: Reboot after joining
+      ansible.windows.win_reboot:
+      when: join_result.reboot_required
