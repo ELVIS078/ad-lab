@@ -20,3 +20,7 @@ config/
 *.pem
 *.key
 certs/
+*.json
+*.hash
+attacks/**/*.json
+attacks/**/*.hash
